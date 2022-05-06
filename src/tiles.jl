@@ -55,12 +55,15 @@ COLOR_MAP = [
 
 normalise(v) = v/sum(v)
 
-BIOMS =  [ # OCE # DOC # GRS # FRS # TFR # DSR # HDS # SNW # SFR # MNT # BCH #
+BIOMES =  [ # OCE # DOC # GRS # FRS # TFR # DSR # HDS # SNW # SFR # MNT # BCH #
 normalise( [  4  ,  2  ,  0  ,  0  ,  0  ,  0  ,  0  ,  0  ,  0  ,  0  ,  1  ] ),
 normalise( [  2  ,  1  ,  1  ,  0  ,  0  ,  0  ,  0  ,  0  ,  0  ,  0  ,  2  ] ),
 normalise( [  1  ,  0  ,  2  ,  1  ,  1  ,  0  ,  0  ,  0  ,  0  ,  0  ,  1  ] ),
 normalise( [  0  ,  0  ,  1  ,  1  ,  1  ,  0  ,  0  ,  0  ,  0  ,  1  ,  0  ] ),
 normalise( [  0  ,  0  ,  1  ,  2  ,  2  ,  0  ,  0  ,  0  ,  0  ,  3  ,  0  ] ),
 ]
+
+MAX_DEPTH = 3
+NEIGHBOUR_VERSION = false
 
 end

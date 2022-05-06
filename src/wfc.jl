@@ -13,32 +13,15 @@ using DataStructures
 
 using Random
 
-NEIGHBOUR_VERSION = false
-MAX_DEPTH = 3
-
-f0(a, b) = a*b
-f1(a, b) = (a+b)/2
-f2(a, b) = a^2 * b
-
-g(x) = log(ℯ, 10*x)+4
-f3(a, b) = a * max(0, g(b))/g(1)
-
-activation(b) = (1-b^4)^(1/4)
-
-saturation(a, b, factor = 4) = (max(1 - a^factor - b^factor, 0))^(1/factor)
-
-function f4(a, b)
+function f1(a, b)
+    saturation(a, b, factor = 4) = (max(1 - a^factor - b^factor, 0))^(1/factor)
     s = saturation(a, b, 4)
     return (a*b)*s + a*(1-s)
 end
 
-f = NEIGHBOUR_VERSION ? f0 : f4
+f2(a, b) = a*b
 
-function add_probability(a::Vector{Float64}, b::Vector{Float64})
-    v = a .* b
-    v /= sum(v)
-    return v
-end
+f = Setup.NEIGHBOUR_VERSION ? f2 : f1
 
 function aggregate_probability(a::Vector{Float64}, b::Vector{Float64})
     v = f.(a, b)
@@ -102,9 +85,7 @@ function get_color(weights)
             return RGB(Setup.COLOR_MAP[i]...)
         end
     end
-
-    return RGB(1, 0, 1)
-    return RGB(122/255, 115/255, 114/255) # MOUNTAINS
+    return RGB(1, 0, 1) # ERROR MAGENTA
 end
 
 #=
@@ -168,25 +149,56 @@ function get_probabilities(weights)
 end
 
 function get_noise(len)
-    #return zeros(len)
-
     fmod(x) = mod(x, 0.1)
     return fmod.(rand(len))
 end
 
+function get_shortest_distance(p, attraction_points)
+    dist(p1, p2) = √(sum( (p1 .- p2).^2 ))
+    return min([ (dist(p, ap), ap) for ap in attraction_points]...)
+end
+
+function get_angle(p, center)
+    v = center .- p
+    return atan(v[2]/v[1])
+end
+
+function is_that_biome(p, attraction_points, r)
+    noise(ϕ) = sin(ϕ)cos(ϕ)cos((1/4)ϕ + π/7)*0.7
+    d, ap = get_shortest_distance(p, attraction_points)
+
+    if p == ap
+        return true
+    end
+
+    ϕ = get_angle(p, ap)
+    return d < r + r*noise(ϕ)
+
+end
+
 function get_starting_matrix(s)
-    matrix = [ deepcopy(Setup.BIOMS[1]) for i=1:s[1], j=1:s[2] ]
-    len = length(Setup.BIOMS)
+    matrix = [ deepcopy(Setup.BIOMES[1]) for i=1:s[1], j=1:s[2] ]
+    len = length(Setup.BIOMES)
     r = min(s...)/2
 
-    dist(x, y) = √( (x-floor(s[1]/2))^2 + (y-floor(s[2]/2))^2 )
     m0(x) = max(x, 0)
+    normalise(v) = return v/sum(v)
+    smin_scaled = floor(Int64, min(s...)/5)
+
+    attraction_points = [
+        (s[1]/2, s[2]/2),
+        (s[1]/2+rand(5:smin_scaled), s[2]/2+rand(5:smin_scaled)),
+        (s[1]/2-rand(5:smin_scaled), s[2]/2-rand(5:smin_scaled))
+    ]
+
+    neg() = rand(0:1)*(-1)
+    attraction_points = [ (s[1]/2+(rand(5:smin_scaled)*neg()), s[2]/2+(rand(5:smin_scaled)*neg())) for _ in 1:rand(2:6)]
 
     for i in 1:s[1]
         for j in 1:s[2]
             for k in 2:len
-                if dist(i, j) < r*((len-k+1)/len)
-                    matrix[i, j] = deepcopy( m0.(normalise(Setup.BIOMS[k] - get_noise(length(Setup.BIOMS[k])))) )
+                if is_that_biome((i, j), attraction_points, r*((len-k+1)/len)*0.8)
+                    matrix[i, j] = deepcopy( m0.(normalise(Setup.BIOMES[k] - get_noise(length(Setup.BIOMES[k])))) )
                 end
             
             end
@@ -202,7 +214,7 @@ end
 =#
 function propagate!(matrix, collapsed, start)
 
-    propagation_values = get_diffused_propagation(get_ones_index(matrix[start...]), MAX_DEPTH)
+    propagation_values = get_diffused_propagation(get_ones_index(matrix[start...]), Setup.MAX_DEPTH)
 
     s = size(matrix)
     q = Queue{Tuple{Tuple{Int64, Int64}, Int64}}()
@@ -217,7 +229,7 @@ function propagate!(matrix, collapsed, start)
     while !isempty(q)
         curr, d = dequeue!(q)
 
-        if d > MAX_DEPTH
+        if d > Setup.MAX_DEPTH
             continue
         end
 
@@ -233,7 +245,7 @@ function propagate!(matrix, collapsed, start)
 
         if !collapsed[curr...]
 
-            if NEIGHBOUR_VERSION
+            if Setup.NEIGHBOUR_VERSION
                 neighbours = get_neighbours(s, curr)
 
                 probabs = [get_probabilities(matrix[neighbour...]) for neighbour in neighbours]
