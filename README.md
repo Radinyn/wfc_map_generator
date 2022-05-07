@@ -4,7 +4,7 @@
 
 #### Dependencies:
 
-⛬ [Images.jl](https://github.com/JuliaImages/Images.jl)
+⛬ [Images.jl](https://github.com/JuliaImages/Images.jl)  
 ⛬ [DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl)
 
 ![Map Image](img.png)
